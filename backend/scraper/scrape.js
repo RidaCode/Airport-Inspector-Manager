@@ -25,74 +25,81 @@ async function scrape() {
         .children()
         .slice(2);
 
+      //Arrival Flight Constructor
+      function ArrivalFlight(cells) {
+        // cells is a jQuery Object of all the cells of a row in a table
+        this.flightNumber = getFlightNumber(0, cells);
+        this.acReg = grabCell(1, cells);
+        this.fm = grabCell(2, cells);
+        this.city = cityFinder(grabCell(2, cells));
+        this.airportName = airportNameFinder(grabCell(2, cells));
+        this.sta24Format = grabCell(3, cells);
+        this.eta24Format = grabCell(4, cells);
+        this.sta12Format = convertTime(grabCell(3, cells));
+        this.eta12Format = convertTime(grabCell(4, cells));
+        this.pax = grabCell(5, cells);
+        this.conPax = grabCell(6, cells);
+        this.conBag = grabCell(7, cells);
+        this.splRqst = grabCell(8, cells);
+        this.gateStand = grabCell(9, cells);
+        this.isLate = isLate(grabCell(3, cells), grabCell(4, cells));
+        this.isEarly = isEarly(grabCell(3, cells), grabCell(4, cells));
+        this.isOnTime = isOnTime(grabCell(3, cells), grabCell(4, cells));
+        this.lateEarlyBy = timeDiffrance(
+          grabCell(3, cells),
+          grabCell(4, cells)
+        );
+      }
+
+      //Departure Flight Constructor
+      function DepartureFlight(cells) {
+        // cells is a jQuery Object of all the cells of a row in a table
+        this.flightNumber = getFlightNumber(0, cells);
+        this.acReg = grabCell(1, cells);
+        this.to = grabCell(2, cells);
+        this.city = cityFinder(grabCell(2, cells));
+        this.airportName = airportNameFinder(grabCell(2, cells));
+        this.std24Format = grabCell(3, cells);
+        this.etd24Format = grabCell(4, cells);
+        this.std12Format = convertTime(grabCell(3, cells));
+        this.etd12Format = convertTime(grabCell(4, cells));
+        this.pax = grabCell(5, cells);
+        this.conPax = grabCell(6, cells);
+        this.gateStand = grabCell(7, cells);
+        this.isLate = isLate(grabCell(3, cells), grabCell(4, cells));
+        this.isEarly = isEarly(grabCell(3, cells), grabCell(4, cells));
+        this.isOnTime = isOnTime(grabCell(3, cells), grabCell(4, cells));
+        this.lateEarlyBy = timeDiffrance(
+          grabCell(3, cells),
+          grabCell(4, cells)
+        );
+      }
+
       const arrivalFlights = [];
       const departureFlights = [];
 
-      // Arrival
-      arrivalTableSelector.each(async (i, el) => {
-        const flight = {};
-        const row = $(el);
-        const cells = row.children();
+      // iterate through all the rows in the table and create a new flight object for each row in the table and push it to the array of arrivalFlights
+      for (let i = 0; i < arrivalTableSelector.length; i++) {
+        // cells is a jQuery Object of all the cells in the row of the table
+        const cells = arrivalTableSelector.eq(i).children();
+        const arrivalFlight = new ArrivalFlight(cells);
+        arrivalFlights.push(arrivalFlight);
+      }
 
-        flight.flightNumber = getFlightNumber(0, cells);
-        flight.acReg = grabCell(1, cells);
-        flight.fm = grabCell(2, cells);
-        flight.city = cityFinder(grabCell(2, cells));
-        flight.airportName = airportNameFinder(grabCell(2, cells));
-        flight.sta24Format = grabCell(3, cells);
-        flight.eta24Format = grabCell(4, cells);
-        flight.sta12Format = convertTime(grabCell(3, cells));
-        flight.eta12Format = convertTime(grabCell(4, cells));
-        flight.pax = grabCell(5, cells);
-        flight.conPax = grabCell(6, cells);
-        flight.conBag = grabCell(7, cells);
-        flight.splRqst = grabCell(8, cells);
-        flight.gateStand = grabCell(9, cells);
-        flight.isLate = isLate(grabCell(3, cells), grabCell(4, cells));
-        flight.isEarly = isEarly(grabCell(3, cells), grabCell(4, cells));
-        flight.isOnTime = isOnTime(grabCell(3, cells), grabCell(4, cells));
-        flight.lateEarlyBy = timeDiffrance(
-          grabCell(3, cells),
-          grabCell(4, cells)
-        );
+      // iterate through all the rows in the table and create a new flight object for each row in the table and push it to the array of departureFlights
+      for (let i = 0; i < departureTableSelector.length; i++) {
+        // cells is a jQuery Object of all the cells in the row of the table
+        const cells = departureTableSelector.eq(i).children();
+        const departureFlight = new DepartureFlight(cells);
+        departureFlights.push(departureFlight);
+      }
 
-        arrivalFlights.push(flight);
-      });
-      // console.log("Arrival flights pushed to [FlightsDB.arrivalFlights]");
-
-      // Departure
-      departureTableSelector.each((i, el) => {
-        const flight = {};
-        const row = $(el);
-        const cells = row.children();
-
-        flight.flightNumber = getFlightNumber(0, cells);
-        flight.acReg = grabCell(1, cells);
-        flight.to = grabCell(2, cells);
-        flight.city = cityFinder(grabCell(2, cells));
-        flight.airportName = airportNameFinder(grabCell(2, cells));
-        flight.std24Format = grabCell(3, cells);
-        flight.etd24Format = grabCell(4, cells);
-        flight.std12Format = convertTime(grabCell(3, cells));
-        flight.etd12Format = convertTime(grabCell(4, cells));
-        flight.pax = grabCell(5, cells);
-        flight.conPax = grabCell(6, cells);
-        flight.gateStand = grabCell(7, cells);
-        flight.isLate = isLate(grabCell(3, cells), grabCell(4, cells));
-        flight.isEarly = isEarly(grabCell(3, cells), grabCell(4, cells));
-        flight.isOnTime = isOnTime(grabCell(3, cells), grabCell(4, cells));
-        flight.lateEarlyBy = timeDiffrance(
-          grabCell(3, cells),
-          grabCell(4, cells)
-        );
-
-        departureFlights.push(flight);
-      });
-      // console.log("Departure flights pushed to [FlightsDB.departureFlights]");
-
+      // Export to Arrays to JSON files from the scrape
       return await exportToJson();
 
-      // function that update json file from arrivalFlights and departureFlights arrays
+      // Take arrivalFlights and departureFlights arrays
+      // and create a new JSON file arrivalFlights.json and departureFlights.json
+      // with the data from the arrays
       async function exportToJson() {
         fs.writeFile(
           "./arrivalFlights.json",
@@ -125,6 +132,7 @@ async function scrape() {
         return cell;
       }
 
+      //Get Flight Number string
       function getFlightNumber(index, parent) {
         let cell = parent.eq(index).text().replaceAll(" ", "");
         return cell;
@@ -145,6 +153,7 @@ async function scrape() {
         return finalTime;
       }
 
+      // check if flight is late
       function isLate(setTime, estimatedTime) {
         // return true or false
         setTime = TurnZeroHoursTo24(setTime);
@@ -164,8 +173,8 @@ async function scrape() {
         }
       }
 
+      // check if setTime and estimatedTime result isEarly = true then do return subtractTimeStrings(setTime,estimatedTime). else if setTime and estimatedTime result isLate = true then subtractTimeStrings(estimatedTime, setTime). else return `0hr 0min` because it's ontime.
       function timeDiffrance(setTime, estimatedTime) {
-        // check if setTime and estimatedTime result isEarly = true then do return subtractTimeStrings(setTime,estimatedTime). else if setTime and estimatedTime result isLate = true then subtractTimeStrings(estimatedTime, setTime). else return `0hr 0min` because it's ontime.
         setTime = TurnZeroHoursTo24(setTime);
         setTimeHours = HoursToNum(setTime);
         setTimeMins = MinsToNum(setTime);
@@ -189,6 +198,7 @@ async function scrape() {
         }
       }
 
+      // Check if flight is early
       function isEarly(setTime, estimatedTime) {
         setTime = TurnZeroHoursTo24(setTime);
         setTimeHours = HoursToNum(setTime);
@@ -207,6 +217,7 @@ async function scrape() {
         }
       }
 
+      // Check if flight is on time
       function isOnTime(setTime, estimatedTime) {
         setTime = TurnZeroHoursTo24(setTime);
         setTimeHours = HoursToNum(setTime);
@@ -224,7 +235,7 @@ async function scrape() {
         }
       }
 
-      //Subtract two time strings format 24:00,
+      // Subtract two time strings format 24:00,
       function subtractTimeStrings(str1, str2) {
         hoursStr1 = HoursToNum(str1);
         minsStr1 = MinsToNum(str1);
@@ -240,6 +251,7 @@ async function scrape() {
         )}min`;
       }
 
+      // Check if hours is equal to 00 and change to 24 if true and return as a number
       function HoursToNum(str) {
         hours = parseInt(str.replaceAll(":", "").substring(0, 2));
         if (hours === 00) {
@@ -248,6 +260,7 @@ async function scrape() {
         return hours;
       }
 
+      // Turn minutes to number and return as a number
       function MinsToNum(str) {
         mins = parseInt(str.replaceAll(":", "").substring(2, 4));
         return mins;
