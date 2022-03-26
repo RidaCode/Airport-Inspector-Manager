@@ -2,7 +2,6 @@ require("dotenv").config({ path: "../.env" });
 const axios = require("axios");
 const cheerio = require("cheerio");
 const fs = require("fs");
-// import * as utils from "./utils/scrapeFunctions.js";
 const utils = require("./utils/scrapeFunctions.js");
 
 // scrape();
